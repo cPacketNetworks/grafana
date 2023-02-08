@@ -44,7 +44,7 @@ var isLDAPEnabled = func(cfg *setting.Cfg) bool {
 var newLDAP = multildap.New
 
 // supportedHeaders states the supported headers configuration fields
-var supportedHeaderFields = []string{"Name", "Email", "Login", "Groups"}
+var supportedHeaderFields = []string{"Name", "Email", "Login", "Groups", "Role"}
 
 // AuthProxy struct
 type AuthProxy struct {
@@ -279,6 +279,19 @@ func (auth *AuthProxy) LoginViaHeader() (int64, error) {
 	auth.headersIterator(func(field string, header string) {
 		if field == "Groups" {
 			extUser.Groups = util.SplitString(header)
+		} else if field == "Role" {
+			// If Role header is specified, we update the user role of the default org
+			if header != "" {
+				rt := models.RoleType(header)
+				if rt.IsValid() {
+					extUser.OrgRoles = map[int64]models.RoleType{}
+					orgID := int64(1)
+					if setting.AutoAssignOrg && setting.AutoAssignOrgId > 0 {
+						orgID = int64(setting.AutoAssignOrgId)
+					}
+					extUser.OrgRoles[orgID] = rt
+				}
+			}
 		} else {
 			reflect.ValueOf(extUser).Elem().FieldByName(field).SetString(header)
 		}
