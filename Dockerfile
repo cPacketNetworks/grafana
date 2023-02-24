@@ -5,6 +5,8 @@ WORKDIR /usr/src/app/
 COPY package.json yarn.lock ./
 COPY packages packages
 
+RUN apk add --no-cache git
+
 RUN yarn install --pure-lockfile --no-progress
 
 COPY tsconfig.json .eslintrc .editorconfig .browserslistrc .prettierrc.js ./
@@ -24,10 +26,10 @@ WORKDIR $GOPATH/src/github.com/grafana/grafana
 
 COPY go.mod go.sum ./
 
-RUN go mod verify
-
 COPY pkg pkg
 COPY build.go package.json ./
+
+RUN go mod verify
 
 RUN go run build.go build
 
